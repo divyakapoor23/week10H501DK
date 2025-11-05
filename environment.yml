@@ -1,0 +1,16 @@
+name: week10H501DK
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pandas
+  - numpy
+  - scikit-learn
+  - requests
+  - jupyter
+  - streamlit
+  - pip
+  - pip:
+    - matplotlib
+    - seaborn
