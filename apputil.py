@@ -36,9 +36,82 @@ def roast_category(roast_value):
     # If no match found, return None to indicate unknown roast
     return None
 
-def predict_rating(df_X):
+def predict_rating(X, text=False):
     """
-    Predicts rating values for a DataFrame with columns '100g_USD' and 'roast'.
+    Predicts rating values for input data.
+    
+    Parameters:
+    -----------
+    X : pandas.DataFrame or array-like
+        If text=False: DataFrame with columns '100g_USD' (numerical) and 'roast' (text)
+        If text=True: Array of strings containing text descriptions
+    text : bool, default=False
+        If True, treats X as text data and uses TF-IDF model
+        If False, treats X as structured data with price and roast
+    
+    Returns:
+    --------
+    numpy.array
+        Array of predicted rating values
+    """
+    if text:
+        # Handle text-based prediction using TF-IDF model
+        return _predict_rating_text(X)
+    else:
+        # Handle structured data prediction
+        return _predict_rating_structured(X)
+
+def _predict_rating_text(text_data):
+    """
+    Predicts rating values based on text descriptions using TF-IDF model.
+    
+    Parameters:
+    -----------
+    text_data : array-like
+        Array of strings containing text descriptions
+    
+    Returns:
+    --------
+    numpy.array
+        Array of predicted rating values
+    """
+    # Load the TF-IDF model and vectorizer
+    try:
+        with open('model_3.pickle', 'rb') as f:
+            model_data = pickle.load(f)
+            model_3 = model_data['model']
+            vectorizer_3 = model_data['vectorizer']
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"TF-IDF model file not found: {e}. Make sure to run train.py first.")
+    except KeyError as e:
+        raise ValueError(f"Invalid model file format: {e}. The model file may be corrupted.")
+    
+    # Convert input to list if it's not already
+    if isinstance(text_data, str):
+        text_data = [text_data]
+    elif hasattr(text_data, 'tolist'):
+        text_data = text_data.tolist()
+    
+    # Convert to strings and handle missing values
+    text_strings = []
+    for text in text_data:
+        if pd.isna(text) or text is None:
+            text_strings.append('')  # Empty string for missing values
+        else:
+            text_strings.append(str(text))
+    
+    # Transform text using the trained vectorizer
+    # This automatically handles words not seen during training (they're ignored)
+    X_tfidf = vectorizer_3.transform(text_strings)
+    
+    # Make predictions
+    predictions = model_3.predict(X_tfidf)
+    
+    return predictions
+
+def _predict_rating_structured(df_X):
+    """
+    Predicts rating values for structured data with price and roast information.
     
     Parameters:
     -----------
